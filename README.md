@@ -1,6 +1,6 @@
 
 
-# Code Challenge for Catch
+# Code challenge for Catch
 
 ## Contact Details
 - **Name:** Matt Hartshorn
@@ -8,6 +8,7 @@
 - **Email:** dev@matthartshorn.com 
 
 
-## Runing the application
-- install [Docker desktop](https://www.docker.com/products/docker-desktop/) and run the application
-- run `./vendor/bin/sail up` from your CLI
+## Running the application
+- install [Docker desktop](https://www.docker.com/products/docker-desktop/) and run the Docker desktop app
+- run `./vendor/bin/sail up`
+- run `./vendor/bin/sail artisan order:process`

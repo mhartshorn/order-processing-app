@@ -22,16 +22,16 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      */
     public function all()
     {
-        $handleFile = fopen($this->filepath, "r");
+        $fileStream = fopen($this->filepath, "r");
 
         //? Loop while not end of file
-        while(!feof($handleFile)){
+        while(!feof($fileStream)){
             //? Get the current line from file pointer
-            $order = fgets($handleFile);
+            $order = fgets($fileStream);
             echo $order;
             // $this->process($this->jsonToArray($order));
         }
-        fclose($handleFile);
+        fclose($fileStream);
     }
 
     /**
