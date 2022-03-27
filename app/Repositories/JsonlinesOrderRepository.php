@@ -13,26 +13,47 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @var string
      */
-    protected $filepath = 'https://s3-ap-southeast-2.amazonaws.com/catch-code-challenge/challenge-1/orders.jsonl';
+    public $filepath = 'https://s3-ap-southeast-2.amazonaws.com/catch-code-challenge/challenge-1/orders.jsonl';
 
     /**
-     * Get all orders from json lines file.
+     * The output csv filename .
      *
-     * @return void
+     * @var string
      */
-    public function all()
-    {
-        $fileStream = fopen($this->filepath, "r");
+    public $output = 'out.csv';
 
-        //? Loop while not end of file
-        while(!feof($fileStream)){
-            //? Get the current line from file pointer
-            $order = fgets($fileStream);
-            $this->process(
-                $this->jsonToArray($order)
-            );
+    /**
+     * Process a sigle order array.
+     *
+     * @return Order
+     */
+    public function process(object $orderList): Order
+    {
+        $totalValue = $this->sumTotalOrderValue($orderList->items);
+
+        if(!empty($orderList->discounts)){
+            $totalValue = $this->applyDiscounts($orderList->discounts, $totalValue);
         }
-        fclose($fileStream);
+
+        $avgUnitPrice = $this->calculateAvgOrderPrice($orderList->items);
+        $units = $this->getUnits($orderList->items);
+        $distinctUnits = array_unique($units);
+
+        $customerState = $orderList->customer->shipping_address->state;
+
+        if ($totalValue) {
+            $order = new Order();
+
+            $order->setId($orderList->order_id)
+                ->setDatetime($orderList->order_date)
+                ->setTotalValue($totalValue)
+                ->setAvgUnitPrice($avgUnitPrice)
+                ->setDistinctUnits(count($distinctUnits))
+                ->setTotalUnits(count($units))
+                ->setCustomerState($customerState);
+
+            return $order;
+        }
     }
 
     /**
@@ -40,36 +61,37 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return void
      */
-    public function save()
+    public function save(array $orders)
     {
+        $path = storage_path('orders/');
+        $file = fopen($path . $this->output, 'w');
 
-    }
+        $columns = [
+            'order_id',
+            'order_datetime',
+            'total_order_value',
+            'average_unit_price',
+            'distinct_unit_count',
+            'total_units_count',
+            'customer_state',
+        ];
 
-    /**
-     * Process a sigle order array.
-     *
-     * @return void
-     */
-    public function process(array $orders)
-    {
-        // foreach ($orders['discounts'] as $discount) {
-        //     print_r($discount['value']);
-        // }
-        // var_dump($orders);
-        $totalValue = $this->sumTotalOrderValue($orders['items']);
-        if(!empty($orders['discounts'])){
-            $totalValue = $this->applyDiscounts($orders['discounts'], $totalValue);
+        fputcsv($file, $columns);
+
+        foreach ($orders as $order) {
+            $data = [
+                $order->id,
+                $order->datetime,
+                $order->totalValue,
+                $order->avgUnitPrice,
+                $order->distinctUnits,
+                $order->totalUnits,
+                $order->customerState,
+            ];
+            fputcsv($file, $data);
         }
 
-        if ($totalValue) {
-            $order = new Order();
-
-            $order->setId($orders['order_id'])
-                ->setDatetime($orders['order_date'])
-                ->setTotalValue($totalValue);
-
-            var_dump($order);
-        }
+        fclose($file);
     }
 
     /**
@@ -81,7 +103,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
     {
         $orderValue = 0.0;
         foreach ($items as $item) {
-            $orderValue += $item['quantity'] * $item['unit_price'];
+            $orderValue += $item->quantity * $item->unit_price;
         }
         return $orderValue;
     }
@@ -98,13 +120,13 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
         $discountedValue = $totalValue;
 
         foreach ($discounts as $discount) {
-            switch ($discount['type']) {
+            switch ($discount->type) {
                 case 'DOLLAR':
-                    $discountedValue = $discountedValue - $discount['value'];
+                    $discountedValue -= $discount->value;
                     break;
                 case 'PERCENTAGE':
-                    $percentageValue = ($discount['value'] / 100) * $totalValue;
-                    $discountedValue = $discountedValue - $percentageValue;
+                    $percentageValue = ($discount->value / 100) * $totalValue;
+                    $discountedValue -= $percentageValue;
                     break;
             }
         }
@@ -113,13 +135,46 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
     }
 
     /**
+     * Calculate average price of each unit in the order.
+     *
+     * @return float
+     */
+    private function calculateAvgOrderPrice(array $items): float
+    {
+        $avgValue = 0.0;
+        $totalUnitPrice = 0.0;
+
+        foreach ($items as $item) {
+            $totalUnitPrice += $item->unit_price;
+        }
+
+        $avgValue = $totalUnitPrice / count($items);
+        return round($avgValue, 2);
+    }
+
+    /**
+     * Get all units.
+     *
+     * @return array
+     */
+    private function getUnits(array $items): array
+    {
+        $units = [];
+        foreach ($items as $item) {
+            $productId = $item->product->product_id;
+            array_push($units, $productId);
+        }
+        return $units;
+    }
+
+    /**
      * Transform json to array.
      *
      * @return Array
      */
-    private function jsonToArray($json)
+    public function toArray($json)
     {
-        return json_decode($json, true);
+        return json_decode($json);
     }
 
 }

@@ -26,9 +26,26 @@ class ProcessOrder extends Command
      *
      * @return int
      */
-    public function handle(JsonlinesOrderRepository $jsonlRepo)
+    public function handle(JsonlinesOrderRepository $repo)
     {
-        $jsonlRepo->all();
+        $this->info("Opening file stream");
+
+        $filepath = $repo->filepath;
+        $fileStream = fopen($filepath, "r");
+        $orders = [];
+        //? Loop while not end of file
+        while(!feof($fileStream)){
+            //? Get the current line from file pointer
+            $orderList = fgets($fileStream);
+            $order = $repo->process(
+                $repo->toArray($orderList)
+            );
+            $this->info("Processed order " . $order->id);
+            array_push($orders, $order);
+        }
+        fclose($fileStream);
+        $this->info("Exporting orders to csv");
+        $repo->save($orders);
         return 0;
     }
 }

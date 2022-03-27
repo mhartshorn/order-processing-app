@@ -12,3 +12,7 @@
 - install [Docker desktop](https://www.docker.com/products/docker-desktop/) and run the Docker desktop app
 - run `./vendor/bin/sail up`
 - run `./vendor/bin/sail artisan order:process`
+
+## Additional information
+- application entry point is `App/Console/Commands/ProcessOrder.php`
+- csv output file is located at `storage/orders/out.csv`

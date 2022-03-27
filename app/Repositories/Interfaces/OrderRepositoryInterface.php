@@ -6,7 +6,6 @@ use App\Models\Order;
 
 interface OrderRepositoryInterface
 {
-    public function all();
-    public function process(array $order);
-    public function save();
+    public function process(object $orderList);
+    public function save(array $orders);
 }

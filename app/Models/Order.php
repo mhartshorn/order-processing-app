@@ -6,12 +6,15 @@ use Carbon\Carbon;
 
 class Order
 {
-    private int $id;
-    private string $datetime;
-    private float $totalValue;
-    private float $avgUnitePrice;
-    private int $distinctUnits;
-    private int $totalUnits;
+    public int $id;
+    public int $totalUnits;
+    public int $distinctUnits;
+
+    public float $totalValue;
+    public float $avgUnitPrice;
+
+    public string $datetime;
+    public string $customerState;
 
     /**
      * Set the order id.
@@ -37,7 +40,7 @@ class Order
     }
 
     /**
-     * Set the totalValue .
+     * Set the totalValue.
      *
      * @return Order
      */
@@ -52,9 +55,9 @@ class Order
      *
      * @return Order
      */
-    public function setAvgUnitePrice(float $value)
+    public function setAvgUnitPrice(float $value)
     {
-        $this->avgUnitePrice = $value;
+        $this->avgUnitPrice = $value;
         return $this;
     }
 
@@ -63,9 +66,9 @@ class Order
      *
      * @return Order
      */
-    public function setDistinctUnits(array $orders)
+    public function setDistinctUnits(int $units)
     {
-        $this->distinctUnits = $orderCost;
+        $this->distinctUnits = $units;
         return $this;
     }
 
@@ -74,9 +77,20 @@ class Order
      *
      * @return Order
      */
-    public function setTotalUnits(array $orders)
+    public function setTotalUnits(int $units)
     {
-        $this->totalUnits = $orders;
+        $this->totalUnits = $units;
+        return $this;
+    }
+
+    /**
+     * Set customer state.
+     *
+     * @return Order
+     */
+    public function setCustomerState(string $state)
+    {
+        $this->customerState = $state;
         return $this;
     }
 
