@@ -30,9 +30,11 @@ class ProcessOrder extends Command
     {
         $this->info("Opening file stream");
 
-        $filepath = $repo->filepath;
-        $fileStream = fopen($filepath, "r");
         $orders = [];
+        $filepath = $repo->filepath;
+
+        $fileStream = fopen($filepath, "r");
+
         //? Loop while not end of file
         while(!feof($fileStream)){
             //? Get the current line from file pointer
@@ -44,6 +46,7 @@ class ProcessOrder extends Command
             array_push($orders, $order);
         }
         fclose($fileStream);
+
         $this->info("Exporting orders to csv");
         $repo->save($orders);
         return 0;

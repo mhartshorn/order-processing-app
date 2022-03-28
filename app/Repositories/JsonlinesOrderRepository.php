@@ -16,18 +16,18 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
     public $filepath = 'https://s3-ap-southeast-2.amazonaws.com/catch-code-challenge/challenge-1/orders.jsonl';
 
     /**
-     * The output csv filename .
+     * The output csv filename.
      *
      * @var string
      */
     public $output = 'out.csv';
 
     /**
-     * Process a sigle order array.
+     * Process a sigle order.
      *
      * @return Order
      */
-    public function process(object $orderList): Order
+    public function process($orderList)
     {
         $totalValue = $this->sumTotalOrderValue($orderList->items);
 
@@ -61,7 +61,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return void
      */
-    public function save(array $orders)
+    public function save($orders)
     {
         $path = storage_path('orders/');
         $file = fopen($path . $this->output, 'w');
@@ -99,7 +99,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return float
      */
-    private function sumTotalOrderValue(array $items): float
+    private function sumTotalOrderValue($items)
     {
         $orderValue = 0.0;
         foreach ($items as $item) {
@@ -113,21 +113,17 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return float
      */
-    private function applyDiscounts(
-            array $discounts, float $totalValue): float
+    private function applyDiscounts($discounts, $totalValue)
     {
         //? We dont want to override $totalValue for use in calculations
         $discountedValue = $totalValue;
 
         foreach ($discounts as $discount) {
-            switch ($discount->type) {
-                case 'DOLLAR':
-                    $discountedValue -= $discount->value;
-                    break;
-                case 'PERCENTAGE':
-                    $percentageValue = ($discount->value / 100) * $totalValue;
-                    $discountedValue -= $percentageValue;
-                    break;
+            if ($discount->type == 'PERCENTAGE') {
+                $percentageValue = ($discount->value / 100) * $totalValue;
+                $discountedValue -= $percentageValue;
+            } else {
+                $discountedValue -= $discount->value;
             }
         }
 
@@ -139,7 +135,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return float
      */
-    private function calculateAvgOrderPrice(array $items): float
+    private function calculateAvgOrderPrice($items)
     {
         $avgValue = 0.0;
         $totalUnitPrice = 0.0;
@@ -157,7 +153,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return array
      */
-    private function getUnits(array $items): array
+    private function getUnits($items)
     {
         $units = [];
         foreach ($items as $item) {
