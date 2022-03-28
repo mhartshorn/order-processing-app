@@ -14,5 +14,5 @@
 - run `./vendor/bin/sail artisan order:process`
 
 ## Additional information
-- application entry point is `App/Console/Commands/ProcessOrder.php`
+- application entry point is `App/Console/Commands/ProcessOrders.php`
 - csv output file is located at `storage/orders/out.csv`

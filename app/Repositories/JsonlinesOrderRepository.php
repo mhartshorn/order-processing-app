@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Order;
+use App\Services\ProcessOrder;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 
 class JsonlinesOrderRepository implements OrderRepositoryInterface
@@ -13,7 +14,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @var string
      */
-    public $filepath = 'https://s3-ap-southeast-2.amazonaws.com/catch-code-challenge/challenge-1/orders.jsonl';
+    public $path = 'https://s3-ap-southeast-2.amazonaws.com/catch-code-challenge/challenge-1/orders.jsonl';
 
     /**
      * The output csv filename .
@@ -25,9 +26,31 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
     /**
      * Process a sigle order array.
      *
+     * @return object
+     */
+    public function fetch()
+    {
+        $orders = [];
+        $fileStream = fopen($this->path, "r");
+        //? Loop while not end of file
+        while(!feof($fileStream)){
+            //? Push the current line to array
+            $order = json_decode(fgets($fileStream));
+            array_push($orders, $order);
+        }
+        fclose($fileStream);
+        var_dump($orders);
+
+        return $orders;
+    }
+
+
+    /**
+     * Process a sigle order array.
+     *
      * @return Order
      */
-    public function process(object $orderList): Order
+    public function process($orderList)
     {
         $totalValue = $this->sumTotalOrderValue($orderList->items);
 
@@ -61,7 +84,7 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
      *
      * @return void
      */
-    public function save(array $orders)
+    public function save($orders)
     {
         $path = storage_path('orders/');
         $file = fopen($path . $this->output, 'w');
@@ -93,88 +116,4 @@ class JsonlinesOrderRepository implements OrderRepositoryInterface
 
         fclose($file);
     }
-
-    /**
-     * Sum total order items not include shipping.
-     *
-     * @return float
-     */
-    private function sumTotalOrderValue(array $items): float
-    {
-        $orderValue = 0.0;
-        foreach ($items as $item) {
-            $orderValue += $item->quantity * $item->unit_price;
-        }
-        return $orderValue;
-    }
-
-    /**
-     * Apply all discounts.
-     *
-     * @return float
-     */
-    private function applyDiscounts(
-            array $discounts, float $totalValue): float
-    {
-        //? We dont want to override $totalValue for use in calculations
-        $discountedValue = $totalValue;
-
-        foreach ($discounts as $discount) {
-            switch ($discount->type) {
-                case 'DOLLAR':
-                    $discountedValue -= $discount->value;
-                    break;
-                case 'PERCENTAGE':
-                    $percentageValue = ($discount->value / 100) * $totalValue;
-                    $discountedValue -= $percentageValue;
-                    break;
-            }
-        }
-
-        return round($discountedValue, 2);
-    }
-
-    /**
-     * Calculate average price of each unit in the order.
-     *
-     * @return float
-     */
-    private function calculateAvgOrderPrice(array $items): float
-    {
-        $avgValue = 0.0;
-        $totalUnitPrice = 0.0;
-
-        foreach ($items as $item) {
-            $totalUnitPrice += $item->unit_price;
-        }
-
-        $avgValue = $totalUnitPrice / count($items);
-        return round($avgValue, 2);
-    }
-
-    /**
-     * Get all units.
-     *
-     * @return array
-     */
-    private function getUnits(array $items): array
-    {
-        $units = [];
-        foreach ($items as $item) {
-            $productId = $item->product->product_id;
-            array_push($units, $productId);
-        }
-        return $units;
-    }
-
-    /**
-     * Transform json to array.
-     *
-     * @return Array
-     */
-    public function toArray($json)
-    {
-        return json_decode($json);
-    }
-
 }
